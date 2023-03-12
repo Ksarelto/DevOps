@@ -43,3 +43,63 @@ backup_db() {
     cp ../data/users.db "../data/%$current_date%-users.db.backup"
     echo -e "${GREEN}Backup is created!${NC}"
 }
+
+restore_db() {
+  local latest_backup
+  local parsed_time
+  local time_in_seconds_backup
+
+  for line in $(ls ../data)
+  do
+    parsed_time=$(echo $line | cut -s -d'%' -f 2 | sed "s/_/ /g")
+
+    if [[ -z $parsed_time ]]
+    then
+      continue
+    fi
+
+    if [[ -z $time_in_seconds_backup || -z $latest_backup ]]
+    then
+      latest_backup=$line
+      time_in_seconds_backup=$(date +%s -d "$parsed_time")
+      continue
+    fi
+
+    if [[ $(date +%s -d "$parsed_time") -gt $time_in_seconds_backup ]]
+    then
+      latest_backup=$line
+      time_in_seconds_backup=$(date +%s -d "$parsed_time")
+    fi
+  done
+
+  if [[ ! -z $latest_backup ]]
+  then
+    mv -f "../data/$latest_backup" ../data/users.db
+  else
+    echo -e "${RED}No backup file found${NC}"
+  fi
+}
+
+find_user() {
+    local username
+    local result
+
+    read -p 'Please enter the username that you want to find: ' username
+    
+    IFS=$'\n'
+
+    for line in $(cat ../data/users.db)
+    do
+      if [[ $( echo $line | sed 's/_/  /g') =~ $username ]]
+      then 
+        result+="Username: $(echo $line | cut -d '_' -f 2) Role: $(echo $line | cut -d '_' -f 4)\n"
+      fi
+    done
+
+    if [[ -z $result ]]
+    then
+      echo -en "${RED}\nUser not found\n${NC}"
+    else
+      echo -en "${BLUE}\n$result${NC}"
+    fi
+}
