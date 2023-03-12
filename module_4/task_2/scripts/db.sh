@@ -103,3 +103,42 @@ find_user() {
       echo -en "${BLUE}\n$result${NC}"
     fi
 }
+
+get_users_list() {
+    local result=$(cat ../data/users.db | sed 's/_//g' | nl)
+    if [[ $1 == '--inverse' ]]
+    then
+     result=$(printf "${BLUE}$result${NC}" | sort -r)
+    fi
+
+    printf "${BLUE}$result${NC}"
+}
+
+run_command() {
+  case $first_argument in
+  add) add_user ;;
+  restore) restore_db ;;
+  backup) backup_db ;;
+  find) find_user ;;
+  list) get_users_list $second_argument ;;
+  *) help ;;
+  esac
+}
+
+check_database_existance() {
+  if [[ ! -e ../data/users.db && ! -z $first_argument && $first_argument != 'help' ]]
+  then
+    read -p "The users.db file is not exist. If you want to continue you should agree to create it. Do you agree? Y/N: " -ei "Y"
+    if [[ $REPLY =~ ^[Yy]$ ]]
+    then
+      touch ../data/users.db
+      run_command
+    else
+      echo -e "\nSorry, can't continue without db file"
+    fi
+  else
+    run_command 
+  fi
+}
+
+check_database_existance
