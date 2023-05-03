@@ -2,13 +2,15 @@
 
 HOST_NAME=$1
 SSH_USER_NAME=$2
-SERVER_HOST_DIR=$(pwd)/backend
-CLIENT_HOST_DIR=$(pwd)/frontend
 USER_PASSWORD=
 
+CONFIGS_HOST_DIR=$(pwd)/configs
+SERVER_HOST_DIR=$(pwd)/backend
+CLIENT_HOST_DIR=$(pwd)/frontend
 
 SERVER_REMOTE_DIR=/var/app/server
 CLIENT_REMOTE_DIR=/var/www/frontend
+CONFIG_REMOTE_DIR=/etc/nginx/conf.d
 
 read -ep "Enter a password to remote user:" -s USER_PASSWORD
 
@@ -30,20 +32,25 @@ check_remote_dir_exists $CLIENT_REMOTE_DIR
 
 echo "---> Building and copying server files - START <---"
 echo $SERVER_HOST_DIR
-cd $SERVER_HOST_DIR && npm ci && npm run build
-scp -Cr dist/ package.json $HOST_NAME:$SERVER_REMOTE_DIR
+cd $SERVER_HOST_DIR && npm ci && npm run build && cd ../
+scp -Cr $SERVER_HOST_DIR/dist/ $SERVER_HOST_DIR/package.json $HOST_NAME:$SERVER_REMOTE_DIR
 echo "---> Building and transfering server - COMPLETE <---"
 
-echo "---> Building and transfering client files, cert and ngingx config - START <---"
+echo "---> Transfering client files, cert and ngingx config - START <---"
 echo $CLIENT_HOST_DIR
-cd $CLIENT_HOST_DIR && npm ci &&  npm run build && cd ../
-scp -Cr $CLIENT_HOST_DIR/dist/* $CLIENT_HOST_DIR/frontend_shop.conf $HOST_NAME:$CLIENT_REMOTE_DIR
-echo "---> Building and transfering - COMPLETE <---"
+scp -Cr $CLIENT_HOST_DIR/* $HOST_NAME:$CLIENT_REMOTE_DIR
+ssh -t $HOST_NAME "echo $USER_PASSWORD | sudo -S bash -c 'chmod -R 777 $CONFIG_REMOTE_DIR'"
+echo "---> Transfering - COMPLETE <---"
+
+echo "---> Transfering configs - START <---"
+echo $CONFIGS_HOST_DIR
+ssh -t $HOST_NAME "echo $USER_PASSWORD | sudo -S bash -c 'chmod -R 777 $CONFIG_REMOTE_DIR'"
+scp -Cr $CONFIGS_HOST_DIR/* $HOST_NAME:$CONFIG_REMOTE_DIR
+echo "---> Transfering - COMPLETE <---"
 
 echo "---> Starting server<---"
 ssh -t $HOST_NAME "cd $SERVER_REMOTE_DIR && npm i && npm run start:pm2 -f"
 
-echo "---> Starting frontend<---"
-ssh -t $HOST_NAME "echo $USER_PASSWORD | sudo -S bash -c 'cd $CLIENT_REMOTE_DIR && cp ./frontend_shop.conf /etc/nginx/conf.d'"
-
+echo "---> Buiding and Starting frontend<---"
 ssh -t $HOST_NAME "echo $USER_PASSWORD | sudo -S systemctl restart nginx"
+ssh -t $HOST_NAME "cd $CLIENT_REMOTE_DIR && npm i && npm run build && npm run start"
