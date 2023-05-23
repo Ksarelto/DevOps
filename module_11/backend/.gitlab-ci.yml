@@ -1,0 +1,28 @@
+image: node:16
+
+stages:
+  - build
+  - quality-check
+
+before_script:
+  - yarn
+
+build:
+  stage: build
+  script:
+    - yarn build
+
+test:
+  stage: quality-check
+  script:
+    - yarn test:e2e
+
+lint:
+  stage: quality-check
+  script:
+    - yarn lint
+
+audit:
+  stage: quality-check
+  script:
+    - npm run audit
