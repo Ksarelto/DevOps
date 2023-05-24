@@ -1,0 +1,29 @@
+image: node:16
+
+stages:
+  - build
+  - quality-check
+  - release
+
+before_script:
+  - npm install
+
+build:
+  stage: build
+  script:
+    - npm run build
+
+test:
+  stage: quality-check
+  script:
+    - npm run test
+
+lint:
+  stage: quality-check
+  script:
+    - npm run lint
+
+audit:
+  stage: quality-check
+  script:
+    - npm run audit
