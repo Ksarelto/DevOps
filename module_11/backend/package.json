@@ -23,7 +23,9 @@
     "prepare": "husky install",
     "release": "standard-version",
     "cicd:local": "bash ./scripts/local_ci_cd.sh",
-    "audit": "npm audit --json --audit-level=none"
+    "audit": "npm audit --json --audit-level=none",
+    "run:sonarqube": "docker-compose up -d",
+    "run:sonarscaner": "npx sonarqube-scanner"
   },
   "dependencies": {
     "@commitlint/cli": "^17.6.3",
@@ -37,6 +39,7 @@
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",
     "rxjs": "^7.2.0",
+    "sonarqube-scanner": "^3.0.1",
     "standard-version": "^9.5.0"
   },
   "devDependencies": {
